@@ -1,0 +1,45 @@
+plugins {
+    id 'jacoco'
+}
+
+def jacocoVersion = '0.8.7'
+
+jacoco {
+    toolVersion = jacocoVersion
+}
+
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
+}
+
+task unitTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
+    def coverageSourceDirs = [
+            "src/main.java"
+    ]
+
+    def fileFilter = []
+
+    def javaClasses = fileTree(
+            dir: "${project.buildDir}/intermediates/javac/debug/classes",
+            excludes: fileFilter
+    )
+
+    def kotlinClasses = fileTree(
+            dir: "${project.buildDir}/tmp/kotlin-classes/debug",
+            excludes: fileFilter
+    )
+    classDirectories.from = files([javaClasses], [kotlinClasses])
+    additionalSourceDirs.setFrom(files(coverageSourceDirs))
+    sourceDirectories.setFrom(files(coverageSourceDirs))
+    executionData.from = fileTree(dir: "${project.buildDir}", includes: [
+            "jacoco/testDebugUnitTest.exec"
+    ])
+
+    report {
+        html {
+            enabled = true
+            destination file("${buildDir}/coverage-report")
+        }
+    }
+}
